@@ -1,0 +1,18 @@
+# =============================================================
+# Root-level ignores (berlaku untuk seluruh repo)
+# =============================================================
+
+# OS / Editor / IDE umum
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.swn
+.vscode/
+.idea/
+.fleet/
+.nova/
+.zd/
+*.log
+*.bak
+*.tmp
