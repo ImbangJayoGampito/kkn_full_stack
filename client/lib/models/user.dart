@@ -21,7 +21,7 @@ class User {
   }
 
   static const _storage = FlutterSecureStorage();
-  static Future<Result<User>> loginUser({
+  static Future<Result<User, String>> loginUser({
     required String username,
     required String password,
     required String endpoint,
@@ -48,7 +48,7 @@ class User {
             value: data['token'],
           );
         } else {
-          return const Err('Token missing in response');
+          return Err<User, String>('Token missing in response');
         }
 
         return Ok(User.fromJson(data['user']));
@@ -56,11 +56,11 @@ class User {
         return Err('Login failed: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
-      return Err(e);
+      return Err<User, String>(e.toString());
     }
   }
 
-  static Future<Result<User>> registerUser({
+  static Future<Result<User, String>> registerUser({
     required String username,
     required String password,
     required String email,
@@ -92,7 +92,7 @@ class User {
             value: data['token'],
           );
         } else {
-          return const Err('Token missing in response');
+          return Err<User, String>('Token missing in response');
         }
 
         // Return success result
@@ -102,7 +102,7 @@ class User {
         return Err('Error ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
-      return Err(e);
+      return Err<User, String>(e.toString());
     }
   }
 
@@ -119,6 +119,39 @@ class User {
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  static Future<Result<User, String>> restoreFromSession({
+    required String token,
+    required String endpoint,
+  }) async {
+    try {
+      debugPrint('Token $token');
+      final response = await http.get(
+        Uri.parse(endpoint),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+      if (response.body.startsWith('<!DOCTYPE html>')) {
+        return Err<User, String>(
+          'Server returned HTML instead of JSON. Possible invalid token.',
+        );
+      }
+      final data = jsonDecode(response.body);
+      StatusCode code = StatusCode(code: response.statusCode);
+      return code.processStatus(
+        json: data,
+        onSuccess: (json) {
+          final userMap = (json as Map<String, dynamic>)['user'];
+          return User.fromJson(userMap);
+        },
+      );
+    } catch (e) {
+      return Err('Failed to restore ${endpoint} user because ${e}');
     }
   }
 }

@@ -33,10 +33,10 @@ class _LoginPageState extends State<LoginPage> {
     String? username;
     String? password;
 
-    if (usernameRes is Ok<String>) {
+    if (usernameRes is Ok<String, String>) {
       username = usernameRes.value;
     }
-    if (passwordRes is Ok<String>) {
+    if (passwordRes is Ok<String, String>) {
       password = passwordRes.value;
     }
 
@@ -50,13 +50,13 @@ class _LoginPageState extends State<LoginPage> {
       endpoint: AppConfig.loginEndpoint,
     );
 
-    if (user is Ok<User>) {
+    if (user is Ok<User, String>) {
       if (mounted) {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         userProvider.setUser(user.value);
-        Navigator.pushReplacementNamed(context, '/');
+        Navigator.pushReplacementNamed(context, RouteConfig.mainMenu);
       }
-    } else if (user is Err<User>) {
+    } else if (user is Err<User, String>) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -106,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: false,
                 labelText: "Username",
                 evaluateInput: (String text) {
-                  final validators = <Result<String> Function(String)>[
+                  final validators = <Result<String, String> Function(String)>[
                     ReactiveValidator.notEmpty,
                     ReactiveValidator.noSpaces,
                     ReactiveValidator.lowercaseOnly,
@@ -121,7 +121,7 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: true,
                 labelText: "Password",
                 evaluateInput: (String text) {
-                  final validators = <Result<String> Function(String)>[
+                  final validators = <Result<String, String> Function(String)>[
                     ReactiveValidator.notEmpty,
                     (v) => ReactiveValidator.requiredLength(v, 8, 40),
                   ];
@@ -189,12 +189,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => RegisterPage(),
-                              ),
-                            );
+                            Navigator.pushNamed(context, RouteConfig.register);
                           },
                       ),
                     ],

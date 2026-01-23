@@ -1,9 +1,11 @@
+import 'package:client/utils/error_handling.dart';
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'package:client/models/products.dart';
 import 'package:client/widgets/error.dart';
 import 'package:client/models/user.dart';
 import 'package:flutter/foundation.dart';
+import 'package:client/widgets/search.dart';
 
 String formatRupiah(double value) {
   final parts = value.toStringAsFixed(2).split('.');
@@ -29,53 +31,54 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      clipBehavior: Clip.antiAlias,
       elevation: 4,
-      margin: const EdgeInsets.all(12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${formatRupiah(product.price)}',
-                  style: const TextStyle(fontSize: 16, color: Colors.green),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (context) =>
-                            ProductDetailWidget(product: product),
-                      ),
-                    );
-                  },
-                  icon: Icon(Icons.search),
-                  label: Text('Details'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    backgroundColor: Colors.deepOrange,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
+          ListTile(
+            leading: Icon(Icons.arrow_drop_down_circle),
+            title: Text(product.name),
+            subtitle: Text(
+              '${formatRupiah(product.price)}',
+              style: TextStyle(color: Colors.green.withOpacity(1)),
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              product.description,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.start,
+            ),
+          ),
+          Divider(
+            color: Colors.grey.shade300, // line color
+            thickness: 1, // line thickness
+            height: 20, // space around the line
+          ),
+          ButtonBar(
+            alignment: MainAxisAlignment.start,
+            children: [
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ProductDetailWidget(product: product),
+                    ),
+                  );
+                },
+                child: const Text('DETAIL'),
+              ),
+            ],
           ),
         ],
       ),
@@ -92,7 +95,7 @@ class ProductDetailWidget extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text("Details for ${product.name}"),
-        backgroundColor: Colors.orange,
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -140,7 +143,9 @@ class ProductList extends StatefulWidget {
 }
 
 class _ProductListState extends State<ProductList> {
-  Future<List<Product>>? _futureProducts;
+  Future<Result<List<Product>, String>>? _futureProducts;
+  List<SearchItem> _searchWidgets = [];
+
   String _token = '';
   @override
   void initState() {
@@ -154,40 +159,62 @@ class _ProductListState extends State<ProductList> {
     setState(() {
       _token = token ?? '';
     });
-
+    var productsToSet = Product.fetchProducts(
+      endpoint: widget.apiUri,
+      token: _token,
+    );
+    Result<List<Product>, String> productFuture = await productsToSet;
+    if (productFuture is Ok<List<Product>, String>) {
+      _searchWidgets = productFuture.value.map((product) {
+        return SearchItem(
+          widgetBuilder: (context) => ProductCard(product: product),
+          textsInside: [
+            product.name,
+            product.description,
+            product.price.toString(),
+          ],
+        );
+      }).toList();
+    }
     // Only fetch products after token is ready
     setState(() {
-      _futureProducts = Product.fetchProducts(
-        endpoint: widget.apiUri,
-        token: _token,
-      );
+      _futureProducts = productsToSet;
     });
   }
+
   @override
   Widget build(BuildContext context) {
-
     if (_futureProducts == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return FutureBuilder<List<Product>>(
-      future: _futureProducts,
+    return FutureBuilder<Result<List<Product>, String>>(
+      future: _futureProducts!,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
           return Center(child: ErrorView(error: snapshot.error));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        } else if (!snapshot.hasData) {
           return const Center(child: Text('No products found.'));
         }
 
-        final products = snapshot.data!;
-        return ListView.builder(
-          itemCount: products.length,
-          itemBuilder: (context, index) {
-            return ProductCard(product: products[index]);
-          },
-        );
+        final result = snapshot.data!;
+
+        switch (result) {
+          case Ok<List<Product>, String>(value: final products):
+            if (products.isEmpty) {
+              return const Center(child: Text('No products found.'));
+            }
+            return SearchCard(items: _searchWidgets);
+
+          case Err<List<Product>, String>(error: final error):
+            return Center(child: ErrorView(error: error.toString()));
+
+          // Fallback — Dart requires exhaustiveness
+          default:
+            return const Center(child: Text('Unexpected result '));
+        }
       },
     );
   }

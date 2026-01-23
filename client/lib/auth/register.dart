@@ -37,13 +37,13 @@ class _RegisterPageState extends State<RegisterPage> {
     String? password;
     String? email;
 
-    if (usernameRes is Ok<String>) {
+    if (usernameRes is Ok<String, String>) {
       username = usernameRes.value;
     }
-    if (passwordRes is Ok<String>) {
+    if (passwordRes is Ok<String, String>) {
       password = passwordRes.value;
     }
-    if (emailRes is Ok<String>) {
+    if (emailRes is Ok<String, String>) {
       email = emailRes.value;
     }
 
@@ -57,12 +57,12 @@ class _RegisterPageState extends State<RegisterPage> {
       password: password,
       endpoint: AppConfig.registerEndpoint,
     );
-    if (user is Ok<User>) {
+    if (user is Ok<User, String>) {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       userProvider.setUser(user.value);
 
-      Navigator.pushReplacementNamed(context, '/');
-    } else if (user is Err<User>) {
+      Navigator.pushReplacementNamed(context, RouteConfig.mainMenu);
+    } else if (user is Err<User, String>) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -112,7 +112,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 obscureText: false,
                 labelText: "Username",
                 evaluateInput: (String text) {
-                  final validators = <Result<String> Function(String)>[
+                  final validators = <Result<String, String> Function(String)>[
                     ReactiveValidator.notEmpty,
                     ReactiveValidator.noSpaces,
                     ReactiveValidator.lowercaseOnly,
@@ -127,7 +127,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 obscureText: false,
                 labelText: "Email",
                 evaluateInput: (String text) {
-                  final validators = <Result<String> Function(String)>[
+                  final validators = <Result<String, String> Function(String)>[
                     ReactiveValidator.notEmpty,
                     ReactiveValidator.email,
                   ];
@@ -140,7 +140,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 obscureText: true,
                 labelText: "Password",
                 evaluateInput: (String text) {
-                  final validators = <Result<String> Function(String)>[
+                  final validators = <Result<String, String> Function(String)>[
                     ReactiveValidator.notEmpty,
                     (v) => ReactiveValidator.requiredLength(v, 8, 40),
                   ];
@@ -192,12 +192,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => LoginPage(),
-                              ),
-                            );
+                            Navigator.pushNamed(context, RouteConfig.login);
                           },
                       ),
                     ],

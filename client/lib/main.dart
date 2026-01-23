@@ -2,14 +2,24 @@ import 'package:client/view/product.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:client/providers/user_provider.dart';
+import 'package:client/providers/settings_provider.dart';
 import 'package:client/auth/login.dart';
 import 'package:client/auth/register.dart';
 import 'package:client/view/main_menu.dart';
-import 'package:client/view/product.dart';
+import 'package:client/view/settings.dart';
 import 'package:client/config/app_config.dart';
+import 'package:client/models/user.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+        ChangeNotifierProvider(create: (context) => SettingsProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -18,20 +28,22 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+
     return ChangeNotifierProvider(
       create: (context) => UserProvider(),
       child: MaterialApp(
         title: 'Shoppenheimer',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        ),
+        theme: ThemeData.light(useMaterial3: true),
+        darkTheme: ThemeData.dark(useMaterial3: true),
+        themeMode: settingsProvider.themeData,
         home: const MainNavigation(title: 'Shoppenheimer'),
         routes: {
-
-          '/login': (context) => LoginPage(),
-          '/register': (context) => RegisterPage(),
-          '/products': (context) =>
+          RouteConfig.login: (context) => LoginPage(),
+          RouteConfig.register: (context) => RegisterPage(),
+          RouteConfig.products: (context) =>
               ProductList(apiUri: AppConfig.productsEndpoint),
+          RouteConfig.settings: (context) => SettingsPage(),
         },
       ),
     );

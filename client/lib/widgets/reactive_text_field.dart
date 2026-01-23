@@ -1,94 +1,109 @@
 import 'package:flutter/material.dart';
 import 'package:client/utils/error_handling.dart';
 
-typedef TextFieldEvaluate = Result<String> Function(String text);
-Result<T> chainValidators<T>(T value, List<Result<T> Function(T)> validators) {
+
+typedef TextFieldEvaluate = Result<String, String> Function(String text);
+Result<T, String> chainValidators<T>(
+    T value, List<Result<T, String> Function(T)> validators) {
   for (final validator in validators) {
     final result = validator(value);
-    if (result is Err<T>) return result;
+    if (result is Err<T, String>) return result;
   }
-  return Ok(value);
+  return Ok<T, String>(value);
 }
 
-// Validators used for frontend only
+/// Frontend validators
 class ReactiveValidator {
-  static Result<String> email(String value) {
+  static Result<String, String> email(String value) {
     final regex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w{2,}$');
-    if (value.isEmpty) return Err('Email wajib diisi');
-    if (!regex.hasMatch(value)) return Err('Format email tidak valid');
-    return Ok(value);
+    if (value.isEmpty) return Err<String, String>('Email wajib diisi');
+    if (!regex.hasMatch(value)) return Err<String, String>('Format email tidak valid');
+    return Ok<String, String>(value);
   }
 
-  static Result<String> notEmpty(String value) {
-    return value.trim().isEmpty ? Err('Tidak boleh kosong') : Ok(value);
+  static Result<String, String> notEmpty(String value) {
+    return value.trim().isEmpty
+        ? Err<String, String>('Tidak boleh kosong')
+        : Ok<String, String>(value);
   }
 
-  static Result<String> noSpaces(String value) {
-    return value.contains(' ') ? Err('Tidak boleh ada spasi') : Ok(value);
+  static Result<String, String> noSpaces(String value) {
+    return value.contains(' ')
+        ? Err<String, String>('Tidak boleh ada spasi')
+        : Ok<String, String>(value);
   }
 
-  static Result<String> lowercaseOnly(String value) {
+  static Result<String, String> lowercaseOnly(String value) {
     return value.contains(RegExp(r'[A-Z]'))
-        ? Err('Gunakan huruf kecil saja')
-        : Ok(value);
+        ? Err<String, String>('Gunakan huruf kecil saja')
+        : Ok<String, String>(value);
   }
 
-  static Result<String> requiredLength(String value, int min, int max) {
+  static Result<String, String> requiredLength(
+      String value, int min, int max) {
     if (value.length < min) {
-      return Err('Harus lebih dari $min karakter');
+      return Err<String, String>('Harus lebih dari $min karakter');
     } else if (value.length > max) {
-      return Err('Harus kurang dari $max karakter');
+      return Err<String, String>('Harus kurang dari $max karakter');
     }
-    return Ok(value);
+    return Ok<String, String>(value);
   }
 }
 
+/// Reactive text input widget 
 class ReactiveTextInput extends StatefulWidget {
   final String labelText;
   final bool obscureText;
   final TextFieldEvaluate evaluateInput;
+
   const ReactiveTextInput({
     super.key,
     required this.evaluateInput,
     required this.labelText,
     required this.obscureText,
   });
+
   @override
   State<ReactiveTextInput> createState() => ReactiveTextInputState();
 }
 
 class ReactiveTextInputState extends State<ReactiveTextInput> {
   final TextEditingController _controller = TextEditingController();
+  Color _borderColor = Colors.grey;
+  String _helperText = '';
+
+  @override
   void initState() {
     super.initState();
-    _controller.addListener(onTextChanged);
+    _controller.addListener(_onTextChanged);
   }
 
-  Color _borderColor = Color.fromARGB(255, 132, 116, 116);
+  void _onTextChanged() {
+    _validate();
+  }
 
-  String _bottomText = "";
-  void validate() {
+  void _validate() {
     final String text = _controller.text;
-    Color currentColor = Color.fromARGB(255, 5, 184, 44);
-    String textError = "";
-    Result<String> username = widget.evaluateInput(text);
-    if (username is Err<String>) {
-      currentColor = Colors.red;
-      textError = username.error as String;
+    Color newColor = Colors.green;
+    String newHelperText = '';
+
+    final result = widget.evaluateInput(text);
+    if (result is Err<String, String>) {
+      newColor = Colors.red;
+      newHelperText = result.error;
     }
 
-    setState(() {
-      _borderColor = currentColor;
-      _bottomText = textError;
-    });
+    if (_borderColor != newColor || _helperText != newHelperText) {
+      setState(() {
+        _borderColor = newColor;
+        _helperText = newHelperText;
+      });
+    }
   }
 
-  void onTextChanged() {
-    validate();
-  }
-
-  Result<String> getText() {
-    validate();
+  /// Call this to get the current validated value
+  Result<String, String> getText() {
+    _validate();
     return widget.evaluateInput(_controller.text);
   }
 
@@ -101,20 +116,18 @@ class ReactiveTextInputState extends State<ReactiveTextInput> {
   @override
   Widget build(BuildContext context) {
     return TextField(
-      obscureText: widget.obscureText,
       controller: _controller,
+      obscureText: widget.obscureText,
       decoration: InputDecoration(
-        border: OutlineInputBorder(borderSide: BorderSide(color: _borderColor)),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: _borderColor),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: _borderColor, width: 2.0),
-        ),
         labelText: widget.labelText,
         labelStyle: TextStyle(color: _borderColor),
-        helperText: _bottomText,
+        helperText: _helperText.isEmpty ? null : _helperText,
         helperStyle: TextStyle(color: _borderColor),
+        border: OutlineInputBorder(borderSide: BorderSide(color: _borderColor)),
+        enabledBorder:
+            OutlineInputBorder(borderSide: BorderSide(color: _borderColor)),
+        focusedBorder:
+            OutlineInputBorder(borderSide: BorderSide(color: _borderColor, width: 2)),
       ),
     );
   }

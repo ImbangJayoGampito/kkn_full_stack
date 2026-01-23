@@ -1,11 +1,14 @@
 import 'package:client/view/product.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:client/models/user.dart';
 import 'package:client/auth/login.dart';
 import 'package:client/providers/user_provider.dart';
 import 'package:client/config/app_config.dart';
 import 'package:client/widgets/login_required.dart';
+import 'package:client/utils/error_handling.dart';
+import 'package:toastification/toastification.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key, required this.title});
@@ -30,31 +33,66 @@ class _MainNavigationState extends State<MainNavigation> {
     fontSize: 30,
     fontWeight: FontWeight.bold,
   );
+  User? _user;
+  List<Widget>? _widgetOptions;
 
-  late List<Widget> widgetOptions;
-  bool _widgetOptionsInitialized = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     // Do not access InheritedWidgets (like Provider) here. Initialization
     // that depends on them must happen in didChangeDependencies.
+    initialize();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_widgetOptionsInitialized) {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-
-      widgetOptions = <Widget>[
-        HomePage(user: userProvider.user),
+  void initializeWidgets() {
+    setState(() {
+      _widgetOptions = <Widget>[
+        HomePage(user: _user),
         ProductList(apiUri: AppConfig.productsEndpoint),
-        ProfilePage(currentUser: userProvider.user),
+        ProfilePage(currentUser: _user),
       ];
+      _isLoading = false;
+    });
+  }
 
-      _widgetOptionsInitialized = true;
+  FlutterSecureStorage _storage = FlutterSecureStorage();
+  void initialize() async {
+    String token = await _storage.read(key: AppConfig.sessionToken) ?? '';
+
+    Result<User, String> resultUser = await User.restoreFromSession(
+      token: token,
+      endpoint: AppConfig.userRestoreEndpoint,
+    );
+    if (resultUser is Ok<User, String>) {
+      _user = resultUser.value;
+      initializeWidgets();
+    } else if (resultUser is Err<User, String>) {
+      debugPrint('Error restoring user: ${resultUser.error}');
+      initializeWidgets();
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.flatColored, // or fillColored / minimal
+        title: const Text(
+          'Error!',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        description: Text(
+          resultUser.error.toString(), // This will now show fully/multiline
+          maxLines: 10, // Adjust higher if needed (e.g. 8–10)
+          overflow:
+              TextOverflow.ellipsis, // or .visible if you want no ellipsis
+          style: const TextStyle(fontSize: 14),
+        ),
+        autoCloseDuration: const Duration(seconds: 6),
+
+        closeButtonShowType:
+            CloseButtonShowType.always, // Optional: lets user close it
+      );
     }
+    await Future.delayed(const Duration(seconds: 1));
   }
 
   void _onItemTapped(int index) {
@@ -65,10 +103,22 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
+        actions: [
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.pushNamed(context, RouteConfig.settings);
+            },
+          ),
+        ],
       ),
       drawer: Drawer(
         child: ListView(
@@ -102,10 +152,7 @@ class _MainNavigationState extends State<MainNavigation> {
               ),
 
               onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginPage()),
-                );
+                Navigator.pushNamed(context, RouteConfig.mainMenu);
               },
             ),
             // Add more items as needed
@@ -113,7 +160,11 @@ class _MainNavigationState extends State<MainNavigation> {
         ),
       ),
 
-      body: Center(child: widgetOptions.elementAt(_selectedIndex)),
+      body: Center(
+        child:
+            _widgetOptions?.elementAt(_selectedIndex) ??
+            const CircularProgressIndicator(),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
