@@ -10,20 +10,17 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create("products", function (Blueprint $table) {
+        Schema::create("product_images", function (Blueprint $table) {
             $table->id();
-            $table->string("name");
-            $table->text("description");
-            $table->bigInteger('stock');
-            $table->decimal("price", 8, 2);
-            $table->string("image_url")->nullable();
-            $table->unsignedBigInteger("business_id");
+            $table->string("image_url");
+            $table->string("image_alt");
+            $table->string("image_title");
+            $table->unsignedBigInteger("product_id");
             $table
-                ->foreign("business_id")
+                ->foreign("product_id")
                 ->references("id")
-                ->on("businesses")
+                ->on("products")
                 ->onDelete("cascade");
-
             $table->timestamps();
         });
     }
@@ -33,6 +30,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists("products");
+        Schema::dropIfExists("product_images");
     }
 };

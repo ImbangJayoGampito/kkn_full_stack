@@ -34,8 +34,21 @@ class MyApp extends StatelessWidget {
       create: (context) => UserProvider(),
       child: MaterialApp(
         title: 'Shoppenheimer',
-        theme: ThemeData.light(useMaterial3: true),
-        darkTheme: ThemeData.dark(useMaterial3: true),
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue, // 🔵 was purple
+            brightness: Brightness.light,
+          ),
+        ),
+
+        darkTheme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue, // 🔵 was purple
+            brightness: Brightness.dark,
+          ),
+        ),
         themeMode: settingsProvider.themeData,
         home: const MainNavigation(title: 'Shoppenheimer'),
         routes: {

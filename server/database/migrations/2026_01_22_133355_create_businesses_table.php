@@ -18,7 +18,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('address');
             $table->string('phone');
-            
+            $table->unsignedBigInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->enum('type', ['retail', 'service', 'manufacturing', 'tourism', 'other']);
             $table->timestamps();
         });
     }

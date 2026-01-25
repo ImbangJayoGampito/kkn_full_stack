@@ -2,9 +2,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:client/utils/error_handling.dart';
+import 'package:client/config/app_config.dart';
 
 class Product {
-  String id;
+  int id;
   String name;
   String description;
   double price;
@@ -23,13 +24,14 @@ class Product {
       id: json['id'],
       name: json['name'],
       description: json['description'],
-      price: json['price'].toDouble(),
+      price: double.parse(json['price'].toString()),
       imageUrl: json['imageUrl'],
     );
   }
   static Future<Result<List<Product>, String>> fetchProducts({
     required String endpoint,
     required String token,
+    Duration timeout = AppConfig.timeout,
   }) async {
     try {
       debugPrint('tosendProduct $token');
@@ -41,7 +43,9 @@ class Product {
 
       debugPrint('Sending GET $endpoint with headers: $headers');
 
-      final response = await http.get(Uri.parse(endpoint), headers: headers);
+      final response = await http
+          .get(Uri.parse(endpoint), headers: headers)
+          .timeout(timeout);
       debugPrint('Response code: ${response.statusCode}');
       debugPrint('Response body: ${response.body}');
 
@@ -53,7 +57,8 @@ class Product {
           'Server returned HTML instead of JSON. Possible invalid token.',
         );
       }
-      var data = json.decode(body);
+      final Map<String, dynamic> data =
+          json.decode(body) as Map<String, dynamic>;
 
       StatusCode statusCode = StatusCode(code: response.statusCode);
 
@@ -61,8 +66,8 @@ class Product {
         json: data,
         onSuccess: (json) {
           // json is a List<dynamic> already
-          final productsJson = json as List<dynamic>;
-          return productsJson
+          var json = data['data'] as List;
+          return json
               .map((e) => Product.fromJson(e as Map<String, dynamic>))
               .toList();
         },

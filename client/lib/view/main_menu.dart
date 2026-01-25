@@ -9,6 +9,10 @@ import 'package:client/config/app_config.dart';
 import 'package:client/widgets/login_required.dart';
 import 'package:client/utils/error_handling.dart';
 import 'package:toastification/toastification.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:client/widgets/carousel.dart';
+import 'package:getwidget/getwidget.dart';
+import 'package:client/widgets/toast.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key, required this.title});
@@ -71,28 +75,33 @@ class _MainNavigationState extends State<MainNavigation> {
     } else if (resultUser is Err<User, String>) {
       debugPrint('Error restoring user: ${resultUser.error}');
       initializeWidgets();
-      toastification.show(
-        context: context,
-        type: ToastificationType.error,
-        style: ToastificationStyle.flatColored, // or fillColored / minimal
-        title: const Text(
-          'Error!',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        description: Text(
-          resultUser.error.toString(), // This will now show fully/multiline
-          maxLines: 10, // Adjust higher if needed (e.g. 8–10)
-          overflow:
-              TextOverflow.ellipsis, // or .visible if you want no ellipsis
-          style: const TextStyle(fontSize: 14),
-        ),
-        autoCloseDuration: const Duration(seconds: 6),
-
-        closeButtonShowType:
-            CloseButtonShowType.always, // Optional: lets user close it
+      GFToast.showToast(
+        'Error! ${resultUser.error}', // Combine title + message
+        context,
+        toastPosition:
+            GFToastPosition.BOTTOM, // GFToast uses toastPosition, not Alignment
+        toastDuration: 6, // Set duration to 6 seconds
+        backgroundColor: GFColors.DANGER, // Red for error
+        textStyle: TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
       );
     }
     await Future.delayed(const Duration(seconds: 1));
+  }
+
+  void _handleLogout(BuildContext context) async {
+    bool success = await User.logout();
+    if (success) {
+      Navigator.pushReplacementNamed(context, RouteConfig.mainMenu);
+    } else {
+      showCustomToast(
+        context: context,
+        message: 'Logout failed. Please try again later.',
+        title: 'Logout Failed',
+        duration: const Duration(seconds: 6),
+        alignment: Alignment.topCenter,
+        type: ToastificationType.error,
+      );
+    }
   }
 
   void _onItemTapped(int index) {
@@ -126,7 +135,7 @@ class _MainNavigationState extends State<MainNavigation> {
           children: [
             DrawerHeader(
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.inversePrimary,
               ),
               child: Text('Shoppenheimer'),
             ),
@@ -152,7 +161,7 @@ class _MainNavigationState extends State<MainNavigation> {
               ),
 
               onTap: () {
-                Navigator.pushNamed(context, RouteConfig.mainMenu);
+                _handleLogout(context);
               },
             ),
             // Add more items as needed
@@ -189,24 +198,42 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final List<String> imageList = [
+    "https://cdn.pixabay.com/photo/2017/12/03/18/04/christmas-balls-2995437_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2017/12/13/00/23/christmas-3015776_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2019/12/19/10/55/christmas-market-4705877_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2019/12/20/00/03/road-4707345_960_720.jpg",
+    "https://cdn.pixabay.com/photo/2019/12/22/04/18/x-mas-4711785__340.jpg",
+    "https://cdn.pixabay.com/photo/2016/11/22/07/09/spruce-1848543__340.jpg",
+  ];
   @override
   Widget build(BuildContext context) {
-    if (widget.user == null) {
-      return LoginRequiredWidget();
-    } else {
-      return Center(
-        child: Stack(
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text('Hello ${widget.user!.username} and welcome to my app!'),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
+    return Center(
+      child: Stack(
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              if (widget.user != null)
+                Text('Hello ${widget.user!.username} and welcome to my app!')
+              else
+                Text('Welcome Guest'),
+              CarouselWidget(
+                items: [
+                  CarouselItem(text: 'One', color: Colors.red),
+                  CarouselItem(text: 'Two', color: Colors.blue),
+                  CarouselItem(text: 'Three', color: Colors.green),
+                  CarouselItem(text: 'Four', color: Colors.orange),
+                  CarouselItem(text: 'Five', color: Colors.purple),
+                ],
+                height: 250,
+                autoPlay: true,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

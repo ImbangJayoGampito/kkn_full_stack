@@ -25,18 +25,21 @@ class User {
     required String username,
     required String password,
     required String endpoint,
+    Duration timeout = AppConfig.timeout,
   }) async {
     final url = Uri.parse(endpoint);
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({'username': username, 'password': password}),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'username': username, 'password': password}),
+          )
+          .timeout(timeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -65,22 +68,25 @@ class User {
     required String password,
     required String email,
     required String endpoint,
+    Duration timeout = AppConfig.timeout,
   }) async {
     final url = Uri.parse(endpoint);
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'username': username,
-          'password': password,
-          'email': email,
-        }),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'username': username,
+              'password': password,
+              'email': email,
+            }),
+          )
+          .timeout(timeout);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -125,17 +131,20 @@ class User {
   static Future<Result<User, String>> restoreFromSession({
     required String token,
     required String endpoint,
+    Duration timeout = const Duration(seconds: 10),
   }) async {
     try {
       debugPrint('Token $token');
-      final response = await http.get(
-        Uri.parse(endpoint),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      );
+      final response = await http
+          .get(
+            Uri.parse(endpoint),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+          )
+          .timeout(timeout);
       if (response.body.startsWith('<!DOCTYPE html>')) {
         return Err<User, String>(
           'Server returned HTML instead of JSON. Possible invalid token.',

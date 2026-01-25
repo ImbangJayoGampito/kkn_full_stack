@@ -77,7 +77,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle defaultStyle = TextStyle(color: Colors.grey, fontSize: 14.0);
+    TextStyle defaultStyle = TextStyle(
+      color: Theme.of(context).primaryColor,
+      fontSize: 14.0,
+    );
     TextStyle linkStyle = TextStyle(color: Colors.blue);
     return Scaffold(
       body: Center(
@@ -93,7 +96,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.bold,
                   fontSize: 26,
-                  color: Color(0xFF1C1C1C),
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               SizedBox(height: 6),
@@ -103,7 +106,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.normal,
                   fontSize: 18,
-                  color: Color(0xFF1C1C1C),
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               SizedBox(height: 26),

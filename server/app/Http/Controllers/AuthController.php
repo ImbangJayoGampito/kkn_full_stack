@@ -6,35 +6,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Laravel\Sanctum\PersonalAccessToken;
+use App\Http\Controllers\HelperController;
+
 class AuthController extends Controller
 {
     public function restore(Request $request)
     {
-        $plainToken = $request->bearerToken();
-
-        if (!$plainToken) {
-            return response()->json(["message" => "No token provided"], 401);
-        }
-
-        $token = PersonalAccessToken::findToken($plainToken);
-
-        if (!$token) {
-            return response()->json(["message" => "Invalid token"], 401);
-        }
-
-        // is it expired?
-        if ($token->expires_at && $token->expires_at->isPast()) {
-            $token->delete();
-            return response()->json(["message" => "Token expired"], 401);
-        }
-
-        $user = $token->tokenable; // User
-
+        $authResult = HelperController::authenticateFromToken($request);
+        $user = $authResult['user'];
         if (!$user) {
-            $token->delete();
-            return response()->json(["message" => "Invalid User Bearer!"], 401);
+            return response()->json(
+                ["message" => $authResult['message']],
+                $authResult['code'],
+            );
         }
-
         $userNoPass = $user->only(["id", "username", "email"]);
         return response()->json([
             "message" => "Token revoked",
@@ -58,8 +43,8 @@ class AuthController extends Controller
         ]);
         $token = $user->createToken(
             "api_token",
-            ["*"], 
-            now()->addDays(7), 
+            ["*"],
+            now()->addDays(7),
         )->plainTextToken;
         $user->assignRole("user");
 

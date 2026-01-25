@@ -5,6 +5,8 @@ class AppConfig {
   static const String registerEndpoint = '$baseUrl/register';
   static const String sessionToken = 'token';
   static const String userRestoreEndpoint = '$baseUrl/user/restore';
+  static const Duration timeout = const Duration(seconds: 10);
+  static const String adminDashboardEndpoint = '$baseUrl/admin/dashboard';
 }
 
 class RouteConfig {

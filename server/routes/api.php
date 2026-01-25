@@ -16,7 +16,10 @@ Route::get("/user/restore", [
     App\Http\Controllers\AuthController::class,
     "restore",
 ]);
-
+Route::get("/products", [
+    App\Http\Controllers\ProductsController::class,
+    "index",
+]);
 Route::middleware(["auth:sanctum", "throttle:60,1"])->group(function () {
     Route::post("/logout", [
         App\Http\Controllers\AuthController::class,
@@ -25,9 +28,5 @@ Route::middleware(["auth:sanctum", "throttle:60,1"])->group(function () {
     Route::post("/products/store", [
         App\Http\Controllers\ProductsController::class,
         "store",
-    ]);
-    Route::get("/products", [
-        App\Http\Controllers\ProductsController::class,
-        "index",
     ]);
 });
