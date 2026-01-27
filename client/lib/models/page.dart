@@ -4,58 +4,34 @@ import 'package:client/utils/error_handling.dart';
 import 'package:dio/dio.dart';
 
 class PaginatedResponse<T> {
-  final int total;
-  final int perPage;
   final int currentPage;
-  final int lastPage;
-  final String? currentPageUrl;
-  final String? firstPageUrl;
-  final String? lastPageUrl;
-  final String? nextPageUrl;
-  final String? prevPageUrl;
-  final String path;
-  final int? from;
-  final int? to;
+  final int pageSize;
+  final int totalItems;
+  final int totalPages;
   final List<T> data;
 
   PaginatedResponse({
-    required this.total,
-    required this.perPage,
     required this.currentPage,
-    required this.lastPage,
-    required this.currentPageUrl,
-    required this.firstPageUrl,
-    required this.lastPageUrl,
-    required this.nextPageUrl,
-    required this.prevPageUrl,
-    required this.path,
-    required this.from,
-    required this.to,
+    required this.pageSize,
+    required this.totalItems,
+    required this.totalPages,
     required this.data,
   });
+
   factory PaginatedResponse.fromJson(
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>) fromJsonT,
   ) {
     return PaginatedResponse(
-      total: json['total'],
-      perPage: json['per_page'],
-      currentPage: json['current_page'],
-      lastPage: json['last_page'],
-      currentPageUrl: json['current_page_url'],
-      firstPageUrl: json['first_page_url'],
-      lastPageUrl: json['last_page_url'],
-      nextPageUrl: json['next_page_url'],
-      prevPageUrl: json['prev_page_url'],
-      path: json['path'],
-      from: json['from'],
-      to: json['to'],
+      currentPage: json['currentPage'],
+      pageSize: json['pageSize'],
+      totalItems: json['totalItems'],
+      totalPages: json['totalPages'],
       data: (json['data'] as List)
           .map((item) => fromJsonT(item as Map<String, dynamic>))
           .toList(),
     );
   }
-
   static Future<Result<PaginatedResponse<T>, String>> fetch<T>({
     required String endpoint,
     String? token,

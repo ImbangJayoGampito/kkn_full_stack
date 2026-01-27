@@ -5,18 +5,22 @@ import 'package:client/utils/error_handling.dart';
 import 'package:client/config/app_config.dart';
 
 class Product {
-  int id;
-  String name;
-  String description;
-  double price;
-  String imageUrl;
+  final int id;
+  final String name;
+  final String description;
+  final double price;
+  final int stock; // new
+  final String? imageUrl; // nullable now
+  final List<ProductImage> images; // map images array
 
   Product({
     required this.id,
     required this.name,
     required this.description,
     required this.price,
-    required this.imageUrl,
+    required this.stock,
+    this.imageUrl,
+    required this.images,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -25,9 +29,16 @@ class Product {
       name: json['name'],
       description: json['description'],
       price: double.parse(json['price'].toString()),
-      imageUrl: json['imageUrl'],
+      stock: json['stock'] ?? 0,
+      imageUrl: json['imageUrl'], // nullable
+      images:
+          (json['images'] as List<dynamic>?)
+              ?.map((i) => ProductImage.fromJson(i))
+              .toList() ??
+          [],
     );
   }
+
   static Future<Result<List<Product>, String>> fetchProducts({
     required String endpoint,
     required String token,
@@ -75,5 +86,28 @@ class Product {
     } catch (e) {
       return Err<List<Product>, String>(e.toString());
     }
+  }
+}
+
+class ProductImage {
+  final int id;
+  final String url;
+  final String alt;
+  final String title;
+
+  ProductImage({
+    required this.id,
+    required this.url,
+    required this.alt,
+    required this.title,
+  });
+
+  factory ProductImage.fromJson(Map<String, dynamic> json) {
+    return ProductImage(
+      id: json['id'],
+      url: json['url'],
+      alt: json['alt'] ?? '',
+      title: json['title'] ?? '',
+    );
   }
 }

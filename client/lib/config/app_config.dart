@@ -1,12 +1,19 @@
 class AppConfig {
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
-  static const String productsEndpoint = '$baseUrl/products';
-  static const String loginEndpoint = '$baseUrl/login';
-  static const String registerEndpoint = '$baseUrl/register';
-  static const String sessionToken = 'token';
-  static const String userRestoreEndpoint = '$baseUrl/user/restore';
-  static const Duration timeout = const Duration(seconds: 10);
+  // Base URL of your API
+  static const String baseUrl = 'http://localhost:5094/api';
+
+  // API endpoints
+  static const String productsEndpoint = '$baseUrl/product/';
+  static const String loginEndpoint = '$baseUrl/auth/login';
+  static const String registerEndpoint = '$baseUrl/auth/register';
+  static const String userRestoreEndpoint = '$baseUrl/auth/restore';
   static const String adminDashboardEndpoint = '$baseUrl/admin/dashboard';
+
+  // Session token key for local storage
+  static const String sessionToken = 'token';
+
+  // Timeout configuration for network requests
+  static const Duration timeout = Duration(seconds: 10);
 }
 
 class RouteConfig {

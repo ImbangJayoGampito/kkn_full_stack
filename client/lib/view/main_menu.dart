@@ -127,6 +127,23 @@ class _MainNavigationState extends State<MainNavigation> {
               Navigator.pushNamed(context, RouteConfig.settings);
             },
           ),
+
+          // 🔐 Auth action
+          _user == null
+              ? IconButton(
+                  tooltip: 'Login',
+                  icon: const Icon(Icons.login),
+                  onPressed: () {
+                    Navigator.pushNamed(context, RouteConfig.login);
+                  },
+                )
+              : IconButton(
+                  tooltip: 'Logout',
+                  icon: const Icon(Icons.logout),
+                  onPressed: () {
+                    // call logout logic
+                  },
+                ),
         ],
       ),
       drawer: Drawer(
@@ -148,22 +165,22 @@ class _MainNavigationState extends State<MainNavigation> {
                 );
               },
             ),
-            ListTile(
-              title: Text.rich(
-                TextSpan(
-                  text: 'Log out',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
+            if (_user != null)
+              ListTile(
+                title: Text.rich(
+                  TextSpan(
+                    text: 'Log out',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
                   ),
                 ),
+                onTap: () {
+                  _handleLogout(context);
+                },
               ),
-
-              onTap: () {
-                _handleLogout(context);
-              },
-            ),
             // Add more items as needed
           ],
         ),

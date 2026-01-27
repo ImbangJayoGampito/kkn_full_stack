@@ -135,8 +135,9 @@ class User {
   }) async {
     try {
       debugPrint('Token $token');
+      debugPrint('Cleaned Token ${token.trim()}');
       final response = await http
-          .get(
+          .post(
             Uri.parse(endpoint),
             headers: {
               'Authorization': 'Bearer $token',
@@ -145,11 +146,15 @@ class User {
             },
           )
           .timeout(timeout);
+      debugPrint('Response Status Code: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
       if (response.body.startsWith('<!DOCTYPE html>')) {
         return Err<User, String>(
           'Server returned HTML instead of JSON. Possible invalid token.',
         );
       }
+
       final data = jsonDecode(response.body);
       StatusCode code = StatusCode(code: response.statusCode);
       return code.processStatus(
@@ -159,8 +164,10 @@ class User {
           return User.fromJson(userMap);
         },
       );
-    } catch (e) {
-      return Err('Failed to restore ${endpoint} user because ${e}');
+    } catch (e, stackTrace) {
+      return Err(
+        'Failed to restore user from $endpoint due to: ${e.toString()}\nStackTrace:\n$stackTrace',
+      );
     }
   }
 }
