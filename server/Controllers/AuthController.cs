@@ -7,13 +7,11 @@ using System.Text;
 using server.Data;
 using server.DTO;
 using server.Models;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
-using System.Text;
+using server.Services;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
+
     private readonly AppDbContext _db;
     private readonly IConfiguration _config;
 
@@ -22,98 +20,16 @@ public class AuthController : ControllerBase
         _db = db;
         _config = config;
     }
-    public ClaimsPrincipal ValidateToken(string token, byte[] key)
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
 
-        try
-        {
-            var validationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ValidateLifetime = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key)
-            };
-
-            var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
-            return principal;
-        }
-        catch (SecurityTokenException)
-        {
-            return null;
-        }
-    }
 
     [HttpPost("restore")]
     public IActionResult Restore()
     {
-        var request = HttpContext.Request;
-        var Authorization = request.Headers["Authorization"].ToString();
-        Console.WriteLine($"Authorization Header: {Authorization}");
 
-        foreach (var header in request.Headers)
-        {
-            Console.WriteLine($"{header.Key}: {header.Value}");
-        }
-        if (string.IsNullOrEmpty(Authorization) || !Authorization.StartsWith("Bearer "))
-        {
-            return BadRequest(new { message = "Authorization header is missing or invalid." });
-        }
-        var token = Authorization.Substring("Bearer ".Length).Trim();
-
-        // Decode the JWT token sent by the client
-        try
-        {
-            // Log token
-            var key = Encoding.ASCII.GetBytes(_config["Jwt:Key"]);
-            if (key == null)
-            {
-                Console.WriteLine("JWT Key is missing in the configuration.");
-                return Unauthorized(new { message = "JWT Key is missing in the configuration." });
-            }
-
-            var principal = ValidateToken(token, key);
-            if (principal == null)
-            {
-                Console.WriteLine("Token validation failed.");
-                return Unauthorized(new { message = "Invalid token." });
-            }
-
-            // Log user ID from token
-            var userIdClaim = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                Console.WriteLine("Token does not contain a valid user identifier.");
-                return Unauthorized(new { message = "Token does not contain a valid user identifier." });
-            }
-
-            if (!int.TryParse(userIdClaim, out var userId))
-            {
-                Console.WriteLine("Invalid user ID in the token.");
-                return Unauthorized(new { message = "Invalid user ID in the token." });
-            }
-
-            var user = _db.Users.FirstOrDefault(u => u.Id == userId);
-            if (user == null)
-            {
-                Console.WriteLine("User not found in the database.");
-                return Unauthorized(new { message = "User not found." });
-            }
-
-            Console.WriteLine("User restored successfully.");
-            return Ok(new
-            {
-                user = new { user.Id, user.Username, user.Email },
-                message = "Session restored successfully."
-            });
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error: " + ex.Message);
-            return Unauthorized(new { message = "An error occurred during token validation.", error = ex.Message });
-        }
-
+        (User? user, String message) = AuthService.GetUserFromToken(HttpContext.Request, _config, _db);
+        if (user == null)
+            return StatusCode(401, new { message });
+        return Ok(new { user = new { user.Id, user.Username, user.Email } });
     }
 
 
