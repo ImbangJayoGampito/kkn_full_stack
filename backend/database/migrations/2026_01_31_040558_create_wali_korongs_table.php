@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('wali_korongs', function (Blueprint $table) {
+        Schema::create('wali_korongs', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->nullable();
-            $table->string('phone', 50)->nullable();
+            $table->string('email');
+            $table->string('phone', 50);
+            // Foreign key to User table, enforcing one-to-one by adding unique constraint
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            // Enforcing unique constraint to ensure one WaliKorong per User
+            $table->unique('user_id');
             $table->timestamps();
         });
     }

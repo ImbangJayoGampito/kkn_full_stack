@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('address')->nullable();
-            $table->string('phone', 50)->nullable();
-            $table->string('email')->nullable();
+            $table->string('phone', 50);
+            $table->string('email');
             $table->text('description')->nullable();
             $table->foreignId('wali_korong_id')->nullable()->constrained('wali_korongs')->nullOnDelete();
             $table->foreignId('nagari_id')->constrained('nagaris')->cascadeOnDelete();

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -13,11 +14,15 @@ class User extends Authenticatable
     use HasApiTokens, HasRoles, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'phone',
+        'username',
+        'email',
+        'password',
+        'phone',
     ];
 
     protected $hidden = [
-        'password', 'remember_token',
+        'password',
+        'remember_token',
     ];
 
     protected $casts = [
@@ -34,14 +39,16 @@ class User extends Authenticatable
         return $this->hasMany(Employee::class);
     }
 
-    public function waliKorongs(): HasMany
+    // One-to-one relationship with WaliKorong (User has one WaliKorong)
+    public function waliKorong(): HasOne
     {
-        return $this->hasMany(WaliKorong::class);
+        return $this->hasOne(WaliKorong::class);
     }
 
-    public function waliNagaris(): HasMany
+    // One-to-one relationship with WaliNagari (User has one WaliNagari)
+    public function waliNagari(): HasOne
     {
-        return $this->hasMany(WaliNagari::class);
+        return $this->hasOne(WaliNagari::class);
     }
 
     public function productTransactions(): HasMany
