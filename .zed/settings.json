@@ -1,0 +1,10 @@
+{
+  "project_name": "kkn_full_stack",
+  // Sets the workspace/project root to /server (absolute path; adjust if relative)
+  "languages": {
+    "CSharp": {
+      "language_servers": ["omnisharp"],
+      "roots": ["*.sln", "*.csproj", ".git"],
+    },
+  },
+}
